@@ -35,6 +35,8 @@ namespace StateMachine.Player
 
 
         #region Move
+        [SerializeField] private FixedJoystick _fixedJoystick;
+        private Vector2 _keyboardMoveInput;
         private Vector2 _moveInput;
         private Vector3 _currentMovement;
         public float CurrentMovementX
@@ -283,7 +285,16 @@ namespace StateMachine.Player
         private void Update()
         {
             if (_pause) return;
+            // Ưu tiên joystick khi đang kéo, dùng bàn phím khi joystick ở giữa.
+            Vector2 joystickInput = _fixedJoystick != null
+                ? _fixedJoystick.Direction
+                : Vector2.zero;
 
+            _moveInput = joystickInput.sqrMagnitude > 0f
+                ? joystickInput
+                : _keyboardMoveInput;
+
+            _moveInputPress = _moveInput.sqrMagnitude > 0f;
             OnRotate();
             _currentState.UpdateStates(); // Update the current state
 
@@ -356,9 +367,7 @@ namespace StateMachine.Player
         #region New Input System callback
         private void OnInputMove(InputAction.CallbackContext context)
         {
-            _moveInput = context.ReadValue<Vector2>(); // Read the input values as vector2
-            
-            _moveInputPress = _moveInput.x != 0 || _moveInput.y != 0; // Update the move input press boolean if any dimension is press
+            _keyboardMoveInput = context.ReadValue<Vector2>();
         }
 
         private void OnInputRun(InputAction.CallbackContext context)
